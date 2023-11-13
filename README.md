@@ -1,12 +1,12 @@
-# Doctrine
+# Elegant PHP objects doctrine
 
 PHP implementation of [Elegant Objects](https://www.amazon.com/dp/B09R21DKSC?binding=paperback).
 
 This is a theory. All code examples are abstract.
 
-## Object names
+## Class names
 
-Object and class names must be named by what they are, not what they do.  
+Class names must be named by what them objects are, not what they do.  
 Avoid postfix "-er".
 
 Bad:
@@ -41,15 +41,12 @@ final class FooSQLReport implements FooReport
         private readonly TableName $tableName
     ) { }
 
-    public function asArrayBetweenDates(Date $dateFrom, Date $dateTo): ArrayType
+    public function asArrayBetweenDates(DateTime $from, DateTime $to): ArrayType
     {
-        $sql = 'SELECT * FROM ?s ...';
-
-        $query = $this
-            ->connection
-            ->sqlResult($sql, $this->tableName->value());
-
-        return $query->asArray();
+        return $this->connection->sqlResultAsArray(
+            sql: 'SELECT * FROM ?s ...',
+            tableName: this->tableName->value(),
+        );
     }
 }
 ```
@@ -90,14 +87,16 @@ final class DefaultFoo implements Foo
     private SomeType $data;
 
     /**
+     * @param array<string,StringType> type
+     *
      * @throws TypeException
      */
-    public function __construct(array $typedData) // you can design it better
+    public function __construct(array $type) // you can design it better
     {
-        if (array_key_exists('string', $typedData)) {
-            $this->data = new SomeTypeFromString($typedData['string']);
-        } else if (array_key_exists('int', $typedData)) {
-            $this->data = new SomeTypeFromInt($typedData['int']);
+        if (array_key_exists('string', $type)) {
+            $this->data = new SomeTypeFromString($type['string']);
+        } else if (array_key_exists('int', $type)) {
+            $this->data = new SomeTypeFromInt($type['int']);
         }
 
         // primary constructor below
@@ -123,7 +122,6 @@ class Foo
         $this->value = (int)$inputValue; // type conversion behavior
     }
 }
-
 ```
 
 Better:
@@ -150,9 +148,9 @@ final class DefaultFoo implements Foo
 {
     private readonly IntegerType $value;
 
-    public function __construct(StringType $inputValue)
+    public function __construct(StringType $value)
     {
-        $this->value = new StringAsInteger($inputValue);
+        $this->value = new StringAsInteger($value);
     }
 }
 ```
@@ -226,7 +224,6 @@ $b = new Foo('123');
 if ($a->equals($b)) { // should be true
     // do something
 }
-
 ```
 
 ## Encapsulate something
@@ -253,12 +250,12 @@ Better:
 final class Year implements StringType
 {
     public function __construct(
-        private DateTime $dateTime
+        private DateTime $date
     ) {}
 
     public function value(): string
     {
-        return $this->dateTime->format('Y');
+        return $this->date->format('Y');
     }
 }
 ```
@@ -335,9 +332,9 @@ final class FileSavingResult implements Result
         private readonly bool $successful = false
     ) { }
 
-    public function from(bool $resultOf): static
+    public function from(bool $result): static
     {
-        return new static($resultOf);
+        return new static($result);
     }
 
     public function successful()
@@ -353,9 +350,12 @@ final class MyFile implements File
         private readonly Result $result
     ) {}
 
-    public function save(StringType $path): void
+    public function savedTo(StringType $path): static
     {
-        $this->result->from(file_put_contents($path, $this->file));
+        return new static(
+            file: $this->file,
+            result: $this->result->from(file_put_contents($path, $this->file))
+        );
     }
 
     public function successful(): bool
@@ -365,9 +365,9 @@ final class MyFile implements File
 }
 ```
 
-## Don't use public constants
+## Don't use globals
 
-Don't use static properties, public constants, global variables e.t.c.
+Don't use public static properties and constants, global variables e.t.c.
 
 Bad:
 
@@ -412,7 +412,7 @@ final class WarningLog implements Log
 
 ## Build immutable objects only
 
-Objects should be immutable.
+Objects must be immutable, but they can represent mutable data, such as a file on disk.
 
 Bad:
 
@@ -536,18 +536,23 @@ final class PutCommentActionTest implements TestCase
 {
     public function susscessful(): void
     {
-        $pgSqlFakeUser = new PgSqlFaceUser;
-        $putCommentAction = new PutCommentAction($pgSqlFakeUser, 'message');
+        assert_that(
+            (new PutCommentAction(new PgSqlFakeUser(), 'message'))->succsessful()
+        );
 
-        arrest_that($putCommentAction->succsessful());
+        // the same with temporal coupling:
+        //
+        // $user = new PgSqlFakeUser();
+        // $action = new PutCommentAction($user, 'message');
+        //
+        // arrest_that($action->succsessful());
     }
 
     public function failed(): void
     {
-        $pgSqlFakeUser = new PgSqlFaceUser;
-        $putCommentAction = new PutCommentAction($pgSqlFakeUser);
-
-        arrest_not($putCommentAction->succsessful());
+        assert_not(
+            (new PutCommentAction(new PgSqlFakeUser()))->succsessful()
+        );
     }
 }
 ```
@@ -600,18 +605,44 @@ final class ReportPage implements Page
 Bad:
 
 ```php
-class Foo
+class User
 {
-    private int $number;
+    private string $name;
+    private string $phone;
+    private string $address;
 
-    public function getNumber(): int
+    public function getName(): string
     {
-        return $number;
+        return $this->name;
     }
 
-    public function setNumber(int $number): static
+    public function setName(string $name): static
     {
-        $this->number = $number;
+        $this->name = $name;
+
+        return $this;
+    }
+
+    public function getPhone(): string
+    {
+        return $this->phone;
+    }
+
+    public function setPhone(string $phone): static
+    {
+        $this->phone = $phone;
+
+        return $this;
+    }
+
+    public function getAddress(): string
+    {
+        return $this->address;
+    }
+
+    public function setAddress(string $address): static
+    {
+        $this->address = $address;
 
         return $this;
     }
@@ -621,22 +652,40 @@ class Foo
 Better:
 
 ```php
-final class DefaultFoo implements Foo
+final class AuthorizedUser implements User
 {
     public function __construct(
-        private IntegerType $number
+        private UserName $name,
+        private UserPhone $phone,
+        private UserAddress $address
     ) {}
 
-    public function number(): IntegerType
+    public function changePhone(UserPhone $phone): static
     {
-        return $this->number;
+        return new static($this->name, $phone, $this->address);
+    }
+
+    public function address(): UserAddress
+    {
+        return $this->address;
+    }
+
+    public function printWith(Template $template): void
+    {
+        return $template
+            ->with('name', $this->name)
+            ->with('phone', $this->phone)
+            ->with('address', $this->address)
+            ->print();
     }
 }
 ```
 
 ## Factories
 
-An object can create another object of its class everywehe, but another objects only in its constructor.
+Try creating objects of other interfaces only in the object constructor with a condition.
+
+When creating objects in methods, just return them and don't use them in those methods.
 
 > It is better to create another objects in secondary constructors, which is not yet available in PHP.
 
@@ -645,9 +694,16 @@ Bad:
 ```php
 class Handler
 {
-    public function handle(RequestInterface $request): ResponseInterface;
+    public function handle(RequestInterface $request): ResponseInterface
     {
-        return new Response();
+        $helper = new Helper();
+        $response = new Response();
+
+        if ($helper->helpNeeded()) {
+            $response->setSomething($helper->something());
+        }
+
+        return $response;
     }
 }
 ```
@@ -708,6 +764,8 @@ interface Foo
 
 ## Fail first instead of fail safe
 
+Throw exceptions as soon as posible and as many as possible.
+
 Bad:
 
 ```php
@@ -719,7 +777,7 @@ class FileHelper
         $files = $this->listFiles($dir);
 
         if ($files === null) {
-            throw new FileException; // or ignore, it doesn't matter
+            throw new FileException(); // the worst thing is to ignore it
         }
 
         return $this->parseFileNames($dir);
@@ -741,7 +799,20 @@ final class FilesPage implements WebPage
 {
     public function __construct(
         private readonly Files $files,
-        private readonly FilesTemplate $templsate
+        private readonly FilesTemplate $template
+    ) {}
+
+    public function html(): Html
+    {
+        return $this->template->renderedHtml($this->files->names());
+    }
+}
+
+final class StrictFilesPage implements WebPage
+{
+    public function __construct(
+        private readonly Files $files,
+        private readonly FilesPage $page,
     ) {}
 
     /**
@@ -749,11 +820,13 @@ final class FilesPage implements WebPage
      */
     public function html(): Html
     {
+        // it's even better design it like "return new ThrowableIf(...)", the lines below are coupled
+
         if (!$this->files->exists()) {
             throw new EmptyDirectoryException();
         }
 
-        return $this->template->renderedHtml($this->files->names());
+        return $this->page->html();
     }
 }
 ```
@@ -794,6 +867,8 @@ final class PostComment implements Comment
      */
     public function withFile(File $file): Comment
     {
+        // it's even better wrap all cases to other objects (decorators)
+
         if (!$file->exists()) {
             throw new FileNotFoundException();
         }
@@ -839,7 +914,7 @@ final class FilePage implements WebPage
 {
     public function __construct(
         private readonly File $file,
-        private readonly FileTemplate $templsate
+        private readonly FileTemplate $template
     ) {}
 
     public function html(): StringType
@@ -879,7 +954,7 @@ class Files
             throw new FilesException("can't count legal files");
         }
 
-        return $legalFiles
+        return $legalFiles;
     }
 }
 ```
@@ -895,14 +970,13 @@ final class LegalFiles implements Files
     public function sendToEmails(Emails $emails): void
     {
         try {
-            foreach ($this->files as $file) {
-                $this->mail->add($emails, $file);
-            }
+            // it's better to create an objective mapping: new Map($this->files)
+            array_map(fn($file) => $this->mail->add($emails, $file), $this->files);
         } catch (FilesException $exception) {
             throw new LegalFilesException(
                 message: "Can't send to emails",
                 previous: $exception
-            )
+            );
         }
     }
 }
@@ -936,10 +1010,11 @@ final class WebApplication implements Application
     public function run(): void
     {
         try {
-            $route = $this->route->matched();
-            $html = $this->templates->templateForRoute($route);
-
-            echo $this->response($html);
+            echo $this->response(
+                $this->templates->templateForRoute(
+                    $this->route->matched()
+                )
+            );
         } catch (Exception $exception) {
             echo $this->response($this->templates->failedTemplate());
         }
@@ -949,7 +1024,7 @@ final class WebApplication implements Application
 
 ## Use AOP for technical moments
 
-Use aspects from aspect-oriented programming for low-level programming.
+It is acceptable to use Aspects in annotations if the AOP functionality is not based on reflection.
 
 Bad:
 
@@ -979,19 +1054,56 @@ Better:
 ```php
 final class FooAPI implements API
 {
-    /** @RetryOnFailure(attemts="5") */
+    #[RetryOnFailure(attempts: 5)]
     public function response(): Response
     {
-        return $this->apiAdapter->resposeForRequest($this->request);
+        return $this->adapter->resposeForRequest($this->request);
     }
 }
 ```
 
-## Inheritance
+Without AOP:
 
-Make classes final or abstract. Do not overrite abstract class methods.
+```php
+final class FooAPI implements API
+{
+    public function response(): Response
+    {
+        return $this->adapter->resposeForRequest($this->request);
+    }
+}
 
-Extend interfaces only
+final class FooAPIWithAttempts implements API
+{
+    public function __construct(
+        private readonly API $api
+    ) { }
+
+    public function response(): Response
+    {
+        // it's even better design it like "return new ObjectiveWhile(...)" or something else, because the lines below are coupled
+
+        $attempts = 0;
+
+        while (true) {
+            try {
+                $attempts++;
+                return $this->api->response();
+            } catch (Exception $e) {
+                if ($attempts > 2) {
+                    throw $e;
+                }
+            }
+        }
+    }
+}
+```
+
+## Composition over inheritance
+
+Make classes final or abstract. Make abstract class methods final (don't override abstract class methods).
+
+Extend types(interfaces and abstract classes) only.
 
 Bad:
 
@@ -1069,3 +1181,410 @@ final class DefaultBar implements Bar, Baz
 ## RAII
 
 Use destructors and destroy objects when you need to.
+
+## Variable names
+
+Use single and plural nouns for variable names, or refactor the code.
+
+Use a noun with an adjactive if the variable losses its meanions without the adjactive (for example: 'timeZone', 'microService').
+
+Bad:
+
+```php
+class DaysHelper
+{
+    public function getWorkingDays()
+    {
+        $allDays = $this->repository->getDays();
+
+        $workingDays = [];
+        foreach ($allDays as $day) {
+            if ($day->isWorking()) {
+                $workingDays[] = $day;
+            }
+        }
+
+        return $workingDays;
+    }
+}
+```
+
+Better:
+
+```php
+final class WorkingDays implements Days
+{
+    public function __construct(
+        private readonly AllDays $period,
+        private Collection $collection
+    ) { }
+
+    public function asArray(): array
+    {
+        // it's better to create an objective mapping: new Map(...)
+        foreach ($this->period as $day) {
+            if (!$day->working()) {
+                continue;
+            }
+
+            $this->collection->add($day);
+        }
+
+        return $this->collection->asArray();
+    }
+}
+```
+
+## Validation
+
+Use decorators for validation and different results (as objects) for assertions.
+
+Bad:
+
+```php
+interface FormValidator
+{
+    public function validate($fileds);
+}
+```
+
+Better:
+
+```php
+interface FooReport
+{
+    public function asArrayBeetwenDates(DateTime $from, DateTime $to): ArrayType;
+}
+
+final class FooSQLReport implements FooReport
+{
+    public function __construct(
+        private readonly DbConnection $connection,
+        private readonly TableName $tableName
+    ) { }
+
+    public function asArrayBetweenDates(DateTime $from, DateTime $to): ArrayType
+    {
+        return $this->connection->sqlResultAsArray(
+            sql: 'SELECT * FROM ?s ...',
+            tableName: this->tableName->value(),
+        );
+    }
+}
+
+final class StrictFooSQLReport implements FooReport
+{
+    public function __construct(
+        private readonly FooSqlReport $report
+    ) { }
+
+    public function asArrayBetweenDates(DateTime $from, DateTime $to): ArrayType
+    {
+        if ($from < new DateTime('now')) {
+            throw new InvalidDateException();
+        }
+
+        return $this->report->asArrayBetweenDates($from, $to);
+    }
+}
+```
+
+## Don't use private constants
+
+Don't use private constants and static variables, use encapsulation or dependency injection or uniqueness.
+
+Bad:
+
+```php
+final class DefaultOrder implements Order
+{
+    private static $errorMessage = 'something wrong';
+
+    public function sell(): void
+    {
+        if (true) { // something wrong
+            throw new Exception(static::$errotMessage);
+        }
+
+        // sell
+    }
+
+    public function decline(): void
+    {
+        if (true) { // something wrong
+            throw new Exception(static::$errotMessage);
+        }
+
+        // decline
+    }
+}
+```
+
+Better:
+
+```php
+final class DefaultOrder implements Order
+{
+    public function sell(): void
+    {
+        if (true) { // something wrong
+            throw new Exception("something wrong - can't sell");
+        }
+
+        // sell
+    }
+
+    public function decline(): void
+    {
+        if (true) { // something wrong
+            throw new Exception("something wrong - can't decline");
+        }
+
+        // decline
+    }
+}
+```
+
+## Don't configure objects
+
+Don't send parameters to objects to configure their behavior.
+
+Bad:
+
+```php
+final class DefaultBook implements Book
+{
+    public function __construct(
+        private readonly LogStream $stream,
+        private readonly string $title,
+        private readonly bool $loggable
+    ) {}
+
+    public function sell()
+    {
+        // sell
+
+        if ($this->loggable) {
+            $this->stream->add('book sold');
+        }
+    }
+}
+```
+
+Better:
+
+```php
+final class DefaultBook implements Book
+{
+    public function __construct(
+        private readonly BookTitle $title
+    ) {}
+
+    public function sell()
+    {
+        // sell
+    }
+}
+
+final class LoggableBook implements Book
+{
+    public function __construct(
+        private readonly LogStream $stream,
+        private readonly DefaultBook $book
+    ) {}
+
+    public function sell()
+    {
+        $this->book->sell();
+        $this->stream->add('book sold');
+    }
+}
+```
+
+## Hidden coupling
+
+Try to write code where each line is independent, otherwise replacing the lines will cause a syntax error.
+
+Bad:
+
+```php
+final class DefaultFoo implements Foo
+{
+    public function process(Dependency $dependency): void
+    {
+        // if we swap the return statements below, the behavior will be different without an error
+        // it is a hidden coupling, the first "return" depends on the "if" condition
+
+        if ($dependency->someExpected()) {
+            return $this->bar();
+        }
+
+        return $this->baz();
+    }
+}
+```
+
+Better:
+
+```php
+final class BarFoo implements Foo
+{
+    public function process()
+    {
+        // bar
+    }
+}
+
+final class BazFoo implements Foo
+{
+    public function process()
+    {
+        // baz
+    }
+}
+
+$foo = new ObjectiveIf(
+    condition: $dependency,
+    then: new BarFoo,
+    else: new BazFoo,
+);
+```
+
+### Law of Demeter
+
+Don't use the fluent interface pattern if the object just returns another object, only use it if the object creates another object.
+
+Bad:
+
+```php
+final class DefaultFoo implements Foo
+{
+    public function bar(): Bar
+    {
+        return $this->bar;
+    }
+}
+
+final class DefaultBar implements Bar
+{
+    public function baz(): void
+    {
+        $this->baz();
+    }
+}
+
+$foo = new DefaultFoo();
+$foo->bar()->baz();
+```
+
+Better:
+
+```php
+final class DefaultFoo implements Foo
+{
+    public function bar(): Bar
+    {
+        return new DefaultBar();
+    }
+}
+
+final class DefaultBar implements Bar
+{
+    public function baz(): void
+    {
+        $this->baz();
+    }
+}
+
+$foo = new DefaultFoo();
+$foo->bar()->baz();
+```
+
+### Don't use annotations
+
+Don't use native or DocBlock annotations. It's a reflection.
+
+Bad:
+
+```php
+class BlogController extends AbstractController
+{
+    #[Route('/blog', name: 'blog_list')]
+    public function list(): Response
+    {
+        // ...
+    }
+}
+```
+
+Better:
+
+```php
+class BlogList
+{
+    public function html(): Html
+    {
+        //
+    }
+}
+```
+
+### Use vertical decomposition of responsibility
+
+Try to use vertical instead of horizontal decomposition of responsibility.
+
+Bad:
+
+```php
+final class FileLog implements Log
+{
+    public function __construct(
+        private readonly string $path
+    ) {}
+
+    public function put(Message $message): void
+    {
+        file_put_contents($this->path, $message->value());
+    }
+}
+
+final class TimedMessage implements Message, StringType
+{
+    public function __construct(
+        private readonly string $message
+    ) {}
+
+    public function value(): string
+    {
+        return sprintf("%s: %s", date('Y-m-d'), $this->message);
+    }
+}
+
+// the script below knows both Log and Message interfaces, it's a horizontal decomposition of responsibility
+
+$log = new FileLog('/path/to/log');
+$message = new TimedMessage('message');
+
+$log->put($message);
+```
+
+Better:
+
+```php
+final class TimedLog implements Log
+{
+    public function __construct(
+        private readonly Log $log
+    ) {}
+
+    public function put(string $message): void
+    {
+        $this->log->put(sprintf("%s: %s", date('Y-m-d'), $message));
+    }
+}
+
+// now we only use the Log interface, it's a vertical decomposition of responsibility
+
+$log = new TimedLog(new FileLog('/path/to/log'));
+$log->put('some message');
+```
