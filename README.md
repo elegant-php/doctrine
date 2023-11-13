@@ -4,7 +4,52 @@ PHP implementation of [Elegant Objects](https://www.amazon.com/dp/B09R21DKSC?bin
 
 This is a theory. All code examples are abstract.
 
-## Sizing
+## Table of contents
+
+- [Elegant PHP objects doctrine](#elegant-php-objects-doctrine)
+  - [Table of contents](#table-of-contents)
+  - [Sizes](#sizes)
+  - [Ecosystem](#ecosystem)
+    - [Always use interfaces](#always-use-interfaces)
+    - [Composition over inheritance](#composition-over-inheritance)
+    - [Tests](#tests)
+  - [Low coupling, high cohesion](#low-coupling-high-cohesion)
+    - [Temporal coupling](#temporal-coupling)
+    - [Use vertical decomposition of responsibility](#use-vertical-decomposition-of-responsibility)
+  - [Naming](#naming)
+    - [Classes](#classes)
+    - [Methods](#methods)
+    - [Objects and variables](#objects-and-variables)
+  - [Creation of objects and their state](#creation-of-objects-and-their-state)
+    - [Build immutable objects only](#build-immutable-objects-only)
+    - [Multiple constructors](#multiple-constructors)
+    - [Keep constructors code-free](#keep-constructors-code-free)
+    - [Encapsulate as little as possible](#encapsulate-as-little-as-possible)
+    - [Encapsulate something](#encapsulate-something)
+    - [Identification](#identification)
+  - [Evils](#evils)
+    - [Don't use globals](#dont-use-globals)
+    - [Don't use NULL](#dont-use-null)
+    - [Don't use static methods](#dont-use-static-methods)
+    - [Don't use getters and setters](#dont-use-getters-and-setters)
+    - [No reflection](#no-reflection)
+    - [Don't use private constants](#dont-use-private-constants)
+    - [Don't configure objects](#dont-configure-objects)
+    - [Don't use annotations](#dont-use-annotations)
+  - [Exceptions](#exceptions)
+    - [Fail first instead of fail safe](#fail-first-instead-of-fail-safe)
+    - [Declare exceptions](#declare-exceptions)
+    - [Don't catch exceptions unless you have to](#dont-catch-exceptions-unless-you-have-to)
+    - [Chain exceptions everywhere](#chain-exceptions-everywhere)
+    - [Recover only at top entry points](#recover-only-at-top-entry-points)
+  - [Patterns and principles](#patterns-and-principles)
+    - [RAII](#raii)
+    - [Factories](#factories)
+    - [Law of Demeter](#law-of-demeter)
+    - [AOP for technical moments](#aop-for-technical-moments)
+    - [Validation](#validation)
+
+## Sizes
 
 Try to stay under **250** lines and lower.
 
@@ -15,6 +60,8 @@ Use small interfaces, one object can implement a number of them.
 Objects must be very cohesive (their methods and properties should be close to each other).
 
 Try to encapsulate [4](#encapsulate-as-little-as-possible) or less objects in one object.
+
+**[Table of contents ↑](#table-of-contents)**
 
 ## Ecosystem
 
@@ -60,6 +107,8 @@ final class Foo implements Bar, Baz
     public function baz(): void {}
 }
 ```
+
+**[Table of contents ↑](#table-of-contents)**
 
 ### Composition over inheritance
 
@@ -142,6 +191,8 @@ final class DefaultBar implements Bar, Baz
 }
 ```
 
+**[Table of contents ↑](#table-of-contents)**
+
 ### Tests
 
 Each class should have a unit test.  
@@ -210,6 +261,8 @@ final class PutCommentActionTest implements TestCase
 }
 ```
 
+**[Table of contents ↑](#table-of-contents)**
+
 ## Low coupling, high cohesion
 
 ### Temporal coupling
@@ -262,6 +315,8 @@ $foo = new ObjectiveIf(
     else: new BazFoo,
 );
 ```
+
+**[Table of contents ↑](#table-of-contents)**
 
 ### Use vertical decomposition of responsibility
 
@@ -325,6 +380,8 @@ $log = new TimedLog(new FileLog('/path/to/log'));
 $log->put('some message');
 ```
 
+**[Table of contents ↑](#table-of-contents)**
+
 ## Naming
 
 ### Classes
@@ -376,6 +433,8 @@ final class FooSQLReport implements FooReport
     }
 }
 ```
+
+**[Table of contents ↑](#table-of-contents)**
 
 ### Methods
 
@@ -443,6 +502,8 @@ final class MyFile implements File
 }
 ```
 
+**[Table of contents ↑](#table-of-contents)**
+
 ### Objects and variables
 
 Use single and plural nouns for variable names, or refactor the code.
@@ -498,6 +559,8 @@ final class WorkingDays implements Days
 }
 ```
 
+**[Table of contents ↑](#table-of-contents)**
+
 ## Creation of objects and their state
 
 ### Build immutable objects only
@@ -530,6 +593,8 @@ final class DefaultFoo implements Foo
     ) {}
 }
 ```
+
+**[Table of contents ↑](#table-of-contents)**
 
 ### Multiple constructors
 
@@ -588,6 +653,8 @@ final class DefaultFoo implements Foo
 }
 ```
 
+**[Table of contents ↑](#table-of-contents)**
+
 ### Keep constructors code-free
 
 Constructors must encapsulate data and must not manipulate it.
@@ -639,6 +706,8 @@ final class DefaultFoo implements Foo
 }
 ```
 
+**[Table of contents ↑](#table-of-contents)**
+
 ### Encapsulate as little as possible
 
 Try to encapsulate 4 or less objects in one object.
@@ -671,6 +740,8 @@ final class AuthorizedUser implements User
     private readonly Role $role;
 }
 ```
+
+**[Table of contents ↑](#table-of-contents)**
 
 ### Encapsulate something
 
@@ -707,6 +778,8 @@ final class Year implements StringType
     }
 }
 ```
+
+**[Table of contents ↑](#table-of-contents)**
 
 ### Identification
 
@@ -749,6 +822,8 @@ if ($a->equals($b)) { // should be true
     // do something
 }
 ```
+
+**[Table of contents ↑](#table-of-contents)**
 
 ## Evils
 
@@ -799,6 +874,8 @@ final class WarningLog implements Log
 }
 ```
 
+**[Table of contents ↑](#table-of-contents)**
+
 ### Don't use NULL
 
 Act as if NULL did not exist.
@@ -842,6 +919,8 @@ final class AuthorizedUser implements User
     ) {}
 }
 ```
+
+**[Table of contents ↑](#table-of-contents)**
 
 ### Don't use static methods
 
@@ -887,6 +966,8 @@ final class ReportPage implements Page
     }
 }
 ```
+
+**[Table of contents ↑](#table-of-contents)**
 
 ### Don't use getters and setters
 
@@ -971,6 +1052,8 @@ final class AuthorizedUser implements User
 }
 ```
 
+**[Table of contents ↑](#table-of-contents)**
+
 ### No reflection
 
 Avoid any reflections.
@@ -1003,6 +1086,8 @@ interface Foo
     public function quuxForBaz(): Quux;
 }
 ```
+
+**[Table of contents ↑](#table-of-contents)**
 
 ### Don't use private constants
 
@@ -1062,6 +1147,8 @@ final class DefaultOrder implements Order
 }
 ```
 
+**[Table of contents ↑](#table-of-contents)**
+
 ### Don't configure objects
 
 Don't send parameters to objects to configure their behavior.
@@ -1119,6 +1206,8 @@ final class LoggableBook implements Book
     }
 }
 ```
+
+**[Table of contents ↑](#table-of-contents)**
 
 ### Don't use annotations
 
@@ -1224,6 +1313,8 @@ final class StrictFilesPage implements WebPage
 }
 ```
 
+**[Table of contents ↑](#table-of-contents)**
+
 ### Declare exceptions
 
 Use DocBlock to declare exceptions and keep it up to date.
@@ -1277,6 +1368,8 @@ final class PostComment implements Comment
 }
 ```
 
+**[Table of contents ↑](#table-of-contents)**
+
 ### Don't catch exceptions unless you have to
 
 Examples:
@@ -1324,6 +1417,8 @@ final class FilePage implements WebPage
     }
 }
 ```
+
+**[Table of contents ↑](#table-of-contents)**
 
 ### Chain exceptions everywhere
 
@@ -1381,6 +1476,8 @@ final class LegalFiles implements Files
 }
 ```
 
+**[Table of contents ↑](#table-of-contents)**
+
 ### Recover only at top entry points
 
 Examples:
@@ -1423,11 +1520,15 @@ final class WebApplication implements Application
 }
 ```
 
+**[Table of contents ↑](#table-of-contents)**
+
 ## Patterns and principles
 
 ### RAII
 
 Use destructors and destroy objects when you need to.
+
+**[Table of contents ↑](#table-of-contents)**
 
 ### Factories
 
@@ -1480,6 +1581,8 @@ final class MyRule implements Rule
     }
 }
 ```
+
+**[Table of contents ↑](#table-of-contents)**
 
 ### Law of Demeter
 
@@ -1612,6 +1715,8 @@ final class FooAPIWithAttempts implements API
 }
 ```
 
+**[Table of contents ↑](#table-of-contents)**
+
 ### Validation
 
 Use decorators for validation and different results (as objects) for assertions.
@@ -1667,3 +1772,5 @@ final class StrictFooSQLReport implements FooReport
     }
 }
 ```
+
+**[Table of contents ↑](#table-of-contents)**
