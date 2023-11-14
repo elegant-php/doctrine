@@ -1127,6 +1127,9 @@ final class DefaultOrder implements Order
 ```php
 final class DefaultOrder implements Order
 {
+    /**
+     * @throws Exception
+     */
     public function sell(): void
     {
         if (true) { // something wrong
@@ -1136,6 +1139,9 @@ final class DefaultOrder implements Order
         // sell
     }
 
+    /**
+     * @throws Exception
+     */
     public function decline(): void
     {
         if (true) { // something wrong
@@ -1695,6 +1701,11 @@ final class FooAPIWithAttempts implements API
         private readonly API $api
     ) { }
 
+    /**
+     * @return Response
+     *
+     * @throws Exception
+     */
     public function response(): Response
     {
         // it's even better design it like "return new ObjectiveWhile(...)" or something else, because the lines below are coupled
@@ -1762,6 +1773,13 @@ final class StrictFooSQLReport implements FooReport
         private readonly FooSqlReport $report
     ) { }
 
+    /**
+     * @param DateTime $from
+     * @param DateTime $to
+     * @return ArrayType
+     *
+     * @throws Exception
+     */
     public function asArrayBetweenDates(DateTime $from, DateTime $to): ArrayType
     {
         if ($from < new DateTime('now')) {
