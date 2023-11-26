@@ -1538,9 +1538,7 @@ Use destructors and destroy objects when you need to.
 
 ### Factories
 
-Try creating objects of **other interfaces** only in the object constructor with a condition.
-
-When creating objects in methods, just return them and don't use them in those methods.
+Create objects of **other interfaces** only in the object constructor with a condition.
 
 > It is better to create objects of other interfaces in secondary constructors, which is not yet available in PHP.
 
@@ -1624,14 +1622,23 @@ $foo->bar()->baz();
 ```php
 final class DefaultFoo implements Foo
 {
+    public function __construct(
+        private readonly Bar $bar
+    ) { }
+
     public function bar(): Bar
     {
-        return new DefaultBar();
+        return $this->bar->withQuux(); // creation
     }
 }
 
 final class DefaultBar implements Bar
 {
+    public function withQuux(): static
+    {
+        return new static($this->quux);
+    }
+
     public function baz(): void
     {
         $this->baz();
